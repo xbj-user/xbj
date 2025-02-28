@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>结算</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="{{ url_for('index') }}">首页</a>
+            <a href="{{ url_for('cart_view') }}">购物车</a>
+        </nav>
+    </header>
+    <div class="checkout-container">
+        <h1>结算</h1>
+        <h2>订单详情</h2>
+        <ul>
+            {% for item in cart %}
+            <li>{{ item['product']['name'] }} - ¥{{ item['product']['price'] }}</li>
+            {% endfor %}
+        </ul>
+        <div class="cart-total">
+            <h3>总计: ¥{{ total_price }}</h3>
+        </div>
+        <form method="POST">
+            <h3>收货信息</h3>
+            <label for="address">地址:</label>
+            <input type="text" name="address" id="address" required>
+            <br>
+            <label for="phone">电话:</label>
+            <input type="text" name="phone" id="phone" required>
+            <br>
+            <button type="submit">提交订单</button>
+        </form>
+        <a href="{{ url_for('cart_view') }}">返回购物车</a>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="{{ url_for('index') }}">首页</a>
+            <a href="{{ url_for('cart_view') }}">购物车</a>
+            {% if 'username' in session %}
+            <a href="{{ url_for('logout') }}">退出登录</a>
+            {% else %}
+            <a href="{{ url_for('login') }}">登录</a>
+            {% endif %}
+            <form action="{{ url_for('index') }}" method="get">
+                <input type="text" name="search" placeholder="搜索商品..." value="{{ request.args.get('search', '') }}">
+                <button type="submit">搜索</button>
+            </form>
+        </nav>
+    </header>
+    <h1>产品列表</h1>
+    <div class="product-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <a href="{{ url_for('product_detail', product_id=product.id) }}">
+                <img src="{{ url_for('static', filename=product.image_url) }}" alt="{{ product.name }}">
+                <h2>{{ product.name }}</h2>
+                <p>¥{{ product.price }}</p>
+            </a>
+            <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="add-to-cart">加入购物车</a>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>

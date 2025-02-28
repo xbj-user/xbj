@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传商品</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <h1>上传商品</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <label for="name">商品名称:</label>
+        <input type="text" name="name" required><br>
+
+        <label for="price">价格:</label>
+        <input type="number" name="price" step="0.01" required><br>
+
+        <label for="description">描述:</label>
+        <textarea name="description"></textarea><br>
+
+        <label for="image">商品图片:</label>
+        <input type="file" name="image" required><br>
+
+        <label for="stock">库存:</label>
+        <input type="number" name="stock" required><br>
+
+        <button type="submit">上传商品</button>
+    </form>
+</body>
+
+</html>

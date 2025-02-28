@@ -1,0 +1,50 @@
+[
+    {
+        "id": 1,
+        "name": "朱嘉手机",
+        "price": 9.9,
+        "description": "",
+        "image_url": "images/2025-02-28_143539.png",
+        "stock": 999
+    },
+    {
+        "id": 2,
+        "name": "朱嘉电脑",
+        "price": 19.9,
+        "description": "",
+        "image_url": "images/2025-02-28_152931.png",
+        "stock": 999
+    },
+    {
+        "id": 3,
+        "name": "朱嘉充电宝",
+        "price": 29.9,
+        "description": "",
+        "image_url": "images/2025-02-28_153105.png",
+        "stock": 999
+    },
+    {
+        "id": 4,
+        "name": "朱嘉穿过的衣服",
+        "price": 999.99,
+        "description": "",
+        "image_url": "images/2025-02-28_153222.png",
+        "stock": 999
+    },
+    {
+        "id": 5,
+        "name": "朱嘉穿强烈推荐的面霜",
+        "price": 999.99,
+        "description": "",
+        "image_url": "images/2025-02-28_153324.png",
+        "stock": 99
+    },
+    {
+        "id": 6,
+        "name": "朱嘉",
+        "price": 999999999999.0,
+        "description": "",
+        "image_url": "images/f09a39a20ebcf3eba2739dc5d76a12a.jpg",
+        "stock": 999
+    }
+]

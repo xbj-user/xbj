@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <h1>登录</h1>
+    <form method="POST">
+        <label for="username">用户名:</label>
+        <input type="text" name="username" required><br>
+
+        <label for="password">密码:</label>
+        <input type="password" name="password" required><br>
+
+        <button type="submit">登录</button>
+    </form>
+
+    <h2>管理员登录</h2>
+    <form action="{{ url_for('admin_login') }}" method="POST">
+        <label for="admin_username">管理员用户名:</label>
+        <input type="text" name="admin_username" required><br>
+
+        <label for="admin_password">管理员密码:</label>
+        <input type="password" name="admin_password" required><br>
+
+        <button type="submit">管理员登录</button>
+    </form>
+</body>
+
+</html>

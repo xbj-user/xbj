@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>购物车</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="{{ url_for('index') }}">首页</a>
+            <a href="{{ url_for('cart_view') }}">购物车</a>
+        </nav>
+    </header>
+    <h1>购物车</h1>
+    <div class="cart-items">
+        {% if cart %}
+        <table>
+            <thead>
+                <tr>
+                    <th>商品</th>
+                    <th>单价</th>
+                    <th>数量</th>
+                    <th>小计</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart %}
+                <tr>
+                    <td>
+                        <img src="{{ url_for('static', filename=item['product']['image_url']) }}"
+                            alt="{{ item['product']['name'] }}" width="50">
+                        {{ item['product']['name'] }}
+                    </td>
+                    <td>¥{{ item['product']['price'] }}</td>
+                    <td>{{ item['quantity'] }}</td>
+                    <td>¥{{ item['product']['price'] * item['quantity'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="cart-total">
+            <h2>总计: ¥{{ total_price }}</h2>
+        </div>
+        <div class="cart-actions">
+            <a href="{{ url_for('checkout') }}" class="checkout-btn">去结算</a>
+            <a href="{{ url_for('index') }}" class="back-btn">返回</a>
+        </div>
+        {% else %}
+        <p>您的购物车是空的。</p>
+        {% endif %}
+    </div>
+</body>
+
+</html>
