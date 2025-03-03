@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录</title>
+    <title>管理员登录</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         .login-container {
@@ -54,40 +54,26 @@
             text-align: center;
             margin-bottom: 15px;
         }
-
-        .switch-mode {
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .switch-mode a {
-            color: #007BFF;
-            text-decoration: none;
-        }
-
-        .switch-mode a:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 
 <body>
     <div class="login-container">
-        <h1>登录</h1>
+        <h1>管理员登录</h1>
         {% if error %}
         <div class="error-message">{{ error }}</div>
         {% endif %}
         <form method="POST">
-            <label for="username">用户名:</label>
-            <input type="text" name="username" id="username" required>
+            <label for="admin_username">管理员用户名:</label>
+            <input type="text" name="admin_username" id="admin_username" required>
 
-            <label for="password">密码:</label>
-            <input type="password" name="password" id="password" required>
+            <label for="admin_password">管理员密码:</label>
+            <input type="password" name="admin_password" id="admin_password" required>
 
             <button type="submit">登录</button>
         </form>
-        <div class="switch-mode">
-            <a href="{{ url_for('admin_login') }}">管理员登录</a>
+        <div style="text-align: center; margin-top: 15px;">
+            <a href="{{ url_for('login') }}">返回普通用户登录</a>
         </div>
     </div>
 </body>

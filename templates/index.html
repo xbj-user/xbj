@@ -10,17 +10,22 @@
 
 <body>
     <header>
-        <nav>
-            <a href="{{ url_for('index') }}">首页</a>
-            <a href="{{ url_for('cart_view') }}">购物车</a>
-            {% if 'username' in session %}
-            <a href="{{ url_for('logout') }}">退出登录</a>
-            {% else %}
-            <a href="{{ url_for('login') }}">登录</a>
-            {% endif %}
-            <form action="{{ url_for('index') }}" method="get">
+        <nav class="main-nav">
+            <div class="nav-brand">
+                <a href="{{ url_for('index') }}">电商平台</a>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('index') }}" class="nav-link">首页</a>
+                <a href="{{ url_for('cart_view') }}" class="nav-link">购物车</a>
+                {% if 'username' in session %}
+                <a href="{{ url_for('logout') }}" class="nav-link">退出登录</a>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="nav-link">登录</a>
+                {% endif %}
+            </div>
+            <form action="{{ url_for('index') }}" method="get" class="search-form">
                 <input type="text" name="search" placeholder="搜索商品..." value="{{ request.args.get('search', '') }}">
-                <button type="submit">搜索</button>
+                <button type="submit" class="search-btn">🔍</button>
             </form>
         </nav>
     </header>
