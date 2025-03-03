@@ -1,50 +1,50 @@
 [
     {
         "id": 1,
-        "name": "朱嘉手机",
-        "price": 9.9,
+        "name": "语音王手机",
+        "price": 199.9,
         "description": "",
         "image_url": "images/2025-02-28_143539.png",
         "stock": 999
     },
     {
         "id": 2,
-        "name": "朱嘉电脑",
-        "price": 19.9,
+        "name": "联想拯救者",
+        "price": 7668.0,
         "description": "",
         "image_url": "images/2025-02-28_152931.png",
         "stock": 999
     },
     {
         "id": 3,
-        "name": "朱嘉充电宝",
-        "price": 29.9,
+        "name": "快充充电宝",
+        "price": 68.0,
         "description": "",
         "image_url": "images/2025-02-28_153105.png",
         "stock": 999
     },
     {
         "id": 4,
-        "name": "朱嘉穿过的衣服",
-        "price": 999.99,
+        "name": "灯芯绒夹克",
+        "price": 556.0,
         "description": "",
         "image_url": "images/2025-02-28_153222.png",
         "stock": 999
     },
     {
         "id": 5,
-        "name": "朱嘉穿强烈推荐的面霜",
-        "price": 999.99,
+        "name": "b2抗皱面霜",
+        "price": 85.0,
         "description": "",
         "image_url": "images/2025-02-28_153324.png",
-        "stock": 99
+        "stock": 999
     },
     {
         "id": 6,
-        "name": "朱嘉",
-        "price": 999999999999.0,
+        "name": "哇哈哈八宝粥",
+        "price": 42.0,
         "description": "",
-        "image_url": "images/f09a39a20ebcf3eba2739dc5d76a12a.jpg",
+        "image_url": "images/2025-03-03_141716.png",
         "stock": 999
     }
 ]

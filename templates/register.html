@@ -4,11 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录</title>
+    <title>用户注册</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        /* 登录框容器样式 */
-        .login-container {
+        .register-container {
             width: 400px;
             margin: 100px auto;
             padding: 30px;
@@ -16,10 +15,9 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             position: relative;
-            /* 确保内部元素可以绝对定位 */
         }
 
-        .login-title {
+        .register-title {
             text-align: center;
             margin-bottom: 25px;
             color: #2c3e50;
@@ -73,72 +71,80 @@
             background-color: #45a049;
         }
 
-        .switch-mode {
+        .login-link {
             text-align: center;
             margin-top: 20px;
         }
 
-        .switch-mode a {
+        .login-link a {
             color: #007BFF;
             text-decoration: none;
             font-weight: 500;
         }
 
-        .switch-mode a:hover {
+        .login-link a:hover {
             text-decoration: underline;
         }
 
-        /* 注册按钮样式 */
-        .register-btn {
-            position: absolute;
-            /* 绝对定位 */
-            top: 20px;
-            /* 距离登录框顶部 */
-            right: 20px;
-            /* 距离登录框右侧 */
-            color: #007BFF;
-            text-decoration: none;
-            font-size: 1em;
-            font-weight: 500;
-        }
-
-        .register-btn:hover {
-            text-decoration: underline;
+        .error-message {
+            color: #e53e3e;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
         }
     </style>
 </head>
 
 <body>
-    <div class="login-container">
-        <!-- 注册按钮 -->
-        <a href="{{ url_for('register') }}" class="register-btn">注册</a>
-
-        <h1 class="login-title">登录</h1>
+    <div class="register-container">
+        <h1 class="register-title">用户注册</h1>
 
         {% if error %}
-        <div class="error-message" style="color: #e53e3e; text-align: center; margin-bottom: 15px;">
+        <div class="error-message" style="display: block; text-align: center; margin-bottom: 15px;">
             {{ error }}
         </div>
         {% endif %}
 
-        <form method="POST">
+        <form method="POST" onsubmit="return validateForm()">
             <div class="form-group">
                 <label for="username">用户名</label>
-                <input type="text" id="username" name="username" class="form-control" placeholder="请输入用户名" required>
+                <input type="text" id="username" name="username" class="form-control" placeholder="请输入英文用户名（字母/数字）"
+                    pattern="[A-Za-z0-9]+" title="仅允许使用英文字母和数字" required>
+                <div class="error-message" id="username-error">用户名只能包含英文字母和数字</div>
             </div>
 
             <div class="form-group">
                 <label for="password">密码</label>
-                <input type="password" id="password" name="password" class="form-control" placeholder="请输入密码" required>
+                <input type="password" id="password" name="password" class="form-control" placeholder="请输入密码（至少6位）"
+                    minlength="6" required>
             </div>
 
-            <button type="submit" class="submit-btn">登录</button>
+            <button type="submit" class="submit-btn">立即注册</button>
         </form>
 
-        <div class="switch-mode">
-            <a href="{{ url_for('admin_login') }}">管理员登录</a>
+        <div class="login-link">
+            已有账号？<a href="{{ url_for('login') }}">立即登录</a>
         </div>
     </div>
+
+    <script>
+        // 实时验证用户名格式
+        document.getElementById('username').addEventListener('input', function (e) {
+            const errorElement = document.getElementById('username-error');
+            const isValid = /^[A-Za-z0-9]+$/.test(e.target.value);
+            errorElement.style.display = isValid ? 'none' : 'block';
+        });
+
+        // 表单提交验证
+        function validateForm() {
+            const username = document.getElementById('username').value;
+            if (!/^[A-Za-z0-9]+$/.test(username)) {
+                alert('用户名只能包含英文字母和数字');
+                return false;
+            }
+            return true;
+        }
+    </script>
 </body>
 
 </html>

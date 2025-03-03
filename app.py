@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from werkzeug.utils import secure_filename
 from decimal import Decimal  # 导入 Decimal 模块
+from datetime import datetime  # 新增导入 datetime 模块
 import os
 import json
+import re
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -12,6 +14,7 @@ app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 PRODUCTS_FILE = 'products.json'
+USERS_FILE = 'users.json'  # 新增用户数据文件
 
 def save_products():
     with open(PRODUCTS_FILE, 'w', encoding='utf-8') as f:
@@ -24,11 +27,20 @@ def load_products():
     except FileNotFoundError:
         return []
 
+def save_users():
+    with open(USERS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(users, f, ensure_ascii=False, indent=4)
+
+def load_users():
+    try:
+        with open(USERS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {'admin': {'password': '123456', 'register_time': '2025-03-01'}}  # 初始管理员账户
+
 products = load_products()
 
-users = {
-    'admin': '123456'
-}
+users = load_users()  # 启动时加载用户数据
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -41,7 +53,8 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        if users.get(username) == password:
+
+        if username in users and users[username]['password'] == password:
             session['username'] = username
             return redirect(url_for('index'))
         else:
@@ -59,6 +72,28 @@ def admin_login():
         else:
             return '管理员用户名或密码错误', 403
     return render_template('admin_login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    error = None
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        if not re.match("^[A-Za-z0-9]+$", username):
+            error = "用户名只能包含英文字母和数字"
+        elif username in users:
+            error = "用户名已存在"
+        else:
+            # 添加注册时间
+            users[username] = {
+                'password': password,
+                'register_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            save_users()  # 保存用户数据
+            return redirect(url_for('login'))
+            
+    return render_template('register.html', error=error)
 
 @app.route('/admin_dashboard', methods=['GET', 'POST'])
 def admin_dashboard():
@@ -89,7 +124,7 @@ def admin_dashboard():
 
         return redirect(url_for('admin_dashboard'))
 
-    return render_template('admin_dashboard.html', products=products)
+    return render_template('admin_dashboard.html', products=products, users=users)
 
 @app.route('/')
 def index():
@@ -205,6 +240,21 @@ def edit_product(product_id):
         return redirect(url_for('admin_dashboard'))
 
     return render_template('edit_product.html', product=product)
+
+#删除用户路由
+@app.route('/delete_user/<username>', methods=['DELETE'])
+def delete_user(username):
+    if 'admin' not in session:
+        return jsonify({'error': '无权操作'}), 403
+
+    if username not in users:
+        return jsonify({'error': '用户不存在'}), 404
+
+    # 删除用户
+    del users[username]
+    save_users()  # 保存更新后的用户数据
+
+    return jsonify({'success': True}), 200
 
 @app.route('/logout')
 def logout():
