@@ -1,15 +1,90 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from decimal import Decimal  # 导入 Decimal 模块
-from datetime import datetime  # 新增导入 datetime 模块
+from datetime import datetime, timedelta  # 新增导入 datetime 模块
 import os
+from dotenv import load_dotenv  # 添加这行
 import json
 import re
+from urllib.parse import urlparse, parse_qs
+import logging
+from logging.handlers import RotatingFileHandler
+
+# 加载环境变量
+load_dotenv()  # 添加这行
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key')
 app.config['UPLOAD_FOLDER'] = 'static/images'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+
+# 配置日志
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+file_handler.setLevel(logging.INFO)
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
+app.logger.info('应用启动')
+
+# 数据库配置
+database_url = os.getenv('DATABASE_URL')
+if not database_url:
+    raise ValueError("未设置 DATABASE_URL 环境变量")
+
+# 确保使用 pg8000 驱动并添加 SSL 参数
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql+pg8000://', 1)
+elif database_url.startswith('postgresql://'):
+    database_url = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
+
+# 添加 SSL 参数到 URL
+if '?' in database_url:
+    database_url += '&sslmode=require'
+else:
+    database_url += '?sslmode=require'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {}
+
+# 添加安全配置
+app.config['SESSION_COOKIE_SECURE'] = True  # 只通过HTTPS发送cookie
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # 防止JavaScript访问cookie
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)  # session过期时间
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 限制上传文件大小为16MB
+
+db = SQLAlchemy(app)
+
+# 用户模型
+class User(db.Model):
+    __tablename__ = 'users'
+    username = db.Column(db.String(80), primary_key=True)
+    password = db.Column(db.String(120), nullable=False)
+    register_time = db.Column(db.DateTime, default=datetime.utcnow)
+
+# 商品模型
+class Product(db.Model):
+    __tablename__ = 'products'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    description = db.Column(db.Text)
+    image_url = db.Column(db.String(200))
+    stock = db.Column(db.Integer, default=0)
+
+# 购物车项目模型
+class CartItem(db.Model):
+    __tablename__ = 'cart_items'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), db.ForeignKey('users.username'))
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'))
+    quantity = db.Column(db.Integer, default=1)
+    product = db.relationship('Product')
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -54,7 +129,8 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        if username in users and users[username]['password'] == password:
+        user = User.query.filter_by(username=username).first()
+        if user and user.password == password:
             session['username'] = username
             return redirect(url_for('index'))
         else:
@@ -82,15 +158,12 @@ def register():
         
         if not re.match("^[A-Za-z0-9]+$", username):
             error = "用户名只能包含英文字母和数字"
-        elif username in users:
+        elif User.query.filter_by(username=username).first():
             error = "用户名已存在"
         else:
-            # 添加注册时间
-            users[username] = {
-                'password': password,
-                'register_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
-            save_users()  # 保存用户数据
+            new_user = User(username=username, password=password)
+            db.session.add(new_user)
+            db.session.commit()
             return redirect(url_for('login'))
             
     return render_template('register.html', error=error)
@@ -117,58 +190,70 @@ def admin_dashboard():
         else:
             return '无效的文件格式'
         
-        product_id = len(products) + 1
-        new_product = {'id': product_id, 'name': name, 'price': price, 'description': description, 'image_url': image_url, 'stock': stock}
-        products.append(new_product)
-        save_products()
+        new_product = Product(
+            name=name,
+            price=price,
+            description=description,
+            image_url=image_url,
+            stock=stock
+        )
+        db.session.add(new_product)
+        db.session.commit()
 
         return redirect(url_for('admin_dashboard'))
 
+    products = Product.query.all()
+    users = User.query.all()
     return render_template('admin_dashboard.html', products=products, users=users)
 
 @app.route('/')
 def index():
     search_query = request.args.get('search', '')
-    filtered_products = [p for p in products if search_query.lower() in p['name'].lower()]
+    if search_query:
+        filtered_products = Product.query.filter(Product.name.ilike(f'%{search_query}%')).all()
+    else:
+        filtered_products = Product.query.all()
     return render_template('index.html', products=filtered_products)
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
-    product = next((p for p in products if p['id'] == product_id), None)
-    if product:
-        return render_template('product_detail.html', product=product)
-    return '产品未找到', 404
+    product = Product.query.get_or_404(product_id)
+    return render_template('product_detail.html', product=product)
 
 @app.route('/add_to_cart/<int:product_id>')
 def add_to_cart(product_id):
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    if 'cart' not in session:
-        session['cart'] = []
+    product = Product.query.get_or_404(product_id)
+    username = session['username']
     
-    product = next((p for p in products if p['id'] == product_id), None)
-    if product:
-        found = False
-        for item in session['cart']:
-            if item['product']['id'] == product_id:
-                item['quantity'] += 1
-                found = True
-                break
-        if not found:
-            session['cart'].append({'product': product, 'quantity': 1})
-        session.modified = True
+    cart_item = CartItem.query.filter_by(
+        username=username,
+        product_id=product_id
+    ).first()
+    
+    if cart_item:
+        cart_item.quantity += 1
+    else:
+        cart_item = CartItem(
+            username=username,
+            product_id=product_id,
+            quantity=1
+        )
+        db.session.add(cart_item)
+    
+    db.session.commit()
     return redirect(url_for('cart_view'))
 
 @app.route('/cart')
 def cart_view():
-    if 'cart' not in session:
-        session['cart'] = []
+    if 'username' not in session:
+        return redirect(url_for('login'))
     
-    # 使用 Decimal 计算总价，确保精度
-    total_price = sum(Decimal(str(item['product']['price'])) * Decimal(str(item['quantity'])) for item in session['cart'])
-    total_price = float(total_price)  # 转换为浮点数以便渲染模板
-    return render_template('cart.html', cart=session['cart'], total_price=total_price)
+    cart_items = CartItem.query.filter_by(username=session['username']).all()
+    total_price = sum(Decimal(str(item.product.price)) * Decimal(str(item.quantity)) for item in cart_items)
+    return render_template('cart.html', cart_items=cart_items, total_price=float(total_price))
 
 @app.route('/remove_from_cart/<int:product_id>')
 def remove_from_cart(product_id):
@@ -176,85 +261,81 @@ def remove_from_cart(product_id):
         return redirect(url_for('login'))
     
     action = request.args.get('action', 'reduce')
+    cart_item = CartItem.query.filter_by(
+        username=session['username'],
+        product_id=product_id
+    ).first_or_404()
     
-    for index, item in enumerate(session['cart']):
-        if item['product']['id'] == product_id:
-            if action == 'remove' or item['quantity'] <= 1:
-                session['cart'].pop(index)
-            else:
-                item['quantity'] -= 1
-            session.modified = True
-            break
+    if action == 'remove' or cart_item.quantity <= 1:
+        db.session.delete(cart_item)
+    else:
+        cart_item.quantity -= 1
+    
+    db.session.commit()
     return redirect(url_for('cart_view'))
 
 @app.route('/checkout', methods=['GET', 'POST'])
 def checkout():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    cart_items = CartItem.query.filter_by(username=session['username']).all()
+    
     if request.method == 'POST':
-        session.pop('cart', None)
+        # 清空购物车
+        CartItem.query.filter_by(username=session['username']).delete()
+        db.session.commit()
         return redirect(url_for('index'))
     
-    if 'cart' not in session:
-        session['cart'] = []
-    
-    # 使用 Decimal 计算总价，确保精度
-    total_price = sum(Decimal(str(item['product']['price'])) * Decimal(str(item['quantity'])) for item in session['cart'])
-    total_price = float(total_price)  # 转换为浮点数以便渲染模板
-    return render_template('checkout.html', cart=session['cart'], total_price=total_price)
+    total_price = sum(Decimal(str(item.product.price)) * Decimal(str(item.quantity)) for item in cart_items)
+    return render_template('checkout.html', cart_items=cart_items, total_price=float(total_price))
 
 @app.route('/delete_product/<int:product_id>', methods=['DELETE'])
 def delete_product(product_id):
     if 'admin' not in session:
         return jsonify({'error': '无权操作'}), 403
 
-    global products
-    products = [p for p in products if p['id'] != product_id]
-    save_products()
+    product = Product.query.get_or_404(product_id)
+    db.session.delete(product)
+    db.session.commit()
     return jsonify({'success': True}), 200
 
-# 新增编辑商品的路由
 @app.route('/edit_product/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     if 'admin' not in session:
         return redirect(url_for('login'))
 
-    product = next((p for p in products if p['id'] == product_id), None)
-    if not product:
-        return '商品未找到', 404
+    product = Product.query.get_or_404(product_id)
 
     if request.method == 'POST':
-        # 更新商品信息
-        product['name'] = request.form['name']
-        product['price'] = float(request.form['price'])
-        product['description'] = request.form['description']
-        product['stock'] = int(request.form['stock'])
+        product.name = request.form['name']
+        product.price = float(request.form['price'])
+        product.description = request.form['description']
+        product.stock = int(request.form['stock'])
 
-        # 处理图片上传
         if 'image' in request.files:
             image = request.files['image']
             if image and allowed_file(image.filename):
                 filename = secure_filename(image.filename)
                 image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                product['image_url'] = f"images/{filename}"
+                product.image_url = f"images/{filename}"
 
-        save_products()
+        db.session.commit()
         return redirect(url_for('admin_dashboard'))
 
     return render_template('edit_product.html', product=product)
 
-#删除用户路由
 @app.route('/delete_user/<username>', methods=['DELETE'])
 def delete_user(username):
     if 'admin' not in session:
         return jsonify({'error': '无权操作'}), 403
 
-    if username not in users:
-        return jsonify({'error': '用户不存在'}), 404
-
-    # 删除用户
-    del users[username]
-    save_users()  # 保存更新后的用户数据
-
-    return jsonify({'success': True}), 200
+    user = User.query.get(username)
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'success': True}), 200
+    return jsonify({'error': '用户不存在'}), 404
 
 @app.route('/logout')
 def logout():
@@ -262,6 +343,36 @@ def logout():
     session.pop('admin', None)
     session.pop('cart', None)
     return redirect(url_for('index'))
+
+# 错误处理
+@app.errorhandler(404)
+def not_found_error(error):
+    app.logger.error('页面未找到: %s', request.url)
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    app.logger.error('服务器错误: %s', error)
+    return render_template('500.html'), 500
+
+@app.errorhandler(413)
+def too_large(e):
+    app.logger.error('文件太大: %s', request.url)
+    return "文件太大", 413
+
+# 请求前处理
+@app.before_request
+def before_request():
+    if not request.is_secure and app.config['SESSION_COOKIE_SECURE']:
+        url = request.url.replace('http://', 'https://', 1)
+        return redirect(url, code=301)
+
+# 请求后处理
+@app.after_request
+def after_request(response):
+    app.logger.info('请求完成: %s %s %s', request.method, request.url, response.status)
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -316,14 +316,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for username, info in users.items() %}
+                    {% for user in users %}
                     <tr>
-                        <td>{{ username }}</td>
-                        <td>{{ info.register_time if info.register_time else '未知时间' }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.register_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td>
-                            {% if username != 'admin' %}
-                            <button onclick="deleteUser('{{ username }}')" class="delete-user-btn">删除</button>
-                            {% endif %}
+                            <button class="delete-user-btn" onclick="deleteUser('{{ user.username }}')">删除</button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -353,24 +351,6 @@
                     .catch(error => {
                         alert('删除失败，请稍后再试');
                         console.error('删除失败:', error);
-                    });
-            }
-        }
-
-        function deleteUser(username) {
-            if (confirm(`确定要删除用户 ${username} 吗？`)) {
-                fetch(`/delete_user/${username}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                    .then(response => {
-                        if (response.ok) {
-                            location.reload();
-                        } else {
-                            alert('删除失败');
-                        }
                     });
             }
         }

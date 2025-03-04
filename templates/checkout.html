@@ -142,12 +142,29 @@
 
         <h1>结算</h1>
         <h2>订单详情</h2>
-        <ul>
-            {% for item in cart %}
-            <li>{{ item['product']['name'] }} - ¥{{ "%.2f"|format(item['product']['price']) }} x {{ item['quantity'] }}
-            </li>
-            {% endfor %}
-        </ul>
+        <table>
+            <thead>
+                <tr>
+                    <th>商品</th>
+                    <th>单价</th>
+                    <th>数量</th>
+                    <th>总价</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr>
+                    <td>
+                        <img src="{{ url_for('static', filename=item.product.image_url) }}" alt="{{ item.product.name }}" class="product-image">
+                        {{ item.product.name }}
+                    </td>
+                    <td>¥{{ "%.2f"|format(item.product.price) }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>¥{{ "%.2f"|format(item.product.price * item.quantity) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         <div class="cart-total">
             <h3>总计: ¥{{ "%.2f"|format(total_price) }}</h3>
         </div>

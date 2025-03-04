@@ -16,7 +16,7 @@
     </header>
     <h1>购物车</h1>
     <div class="cart-items">
-        {% if cart %}
+        {% if cart_items %}
         <table>
             <thead>
                 <tr>
@@ -28,21 +28,23 @@
                 </tr>
             </thead>
             <tbody>
-                {% for item in cart %}
+                {% for item in cart_items %}
                 <tr>
                     <td>
-                        <img src="{{ url_for('static', filename=item['product']['image_url']) }}"
-                            alt="{{ item['product']['name'] }}" width="50">
-                        {{ item['product']['name'] }}
+                        <img src="{{ url_for('static', filename=item.product.image_url) }}" alt="{{ item.product.name }}" class="cart-item-image">
+                        {{ item.product.name }}
                     </td>
-                    <td>¥{{ "%.2f"|format(item['product']['price']) }}</td>
-                    <td>{{ item['quantity'] }}</td>
-                    <td>¥{{ "%.2f"|format(item['product']['price'] * item['quantity']) }}</td>
+                    <td>¥{{ "%.2f"|format(item.product.price) }}</td>
                     <td>
-                        <a
-                            href="{{ url_for('remove_from_cart', product_id=item['product']['id']) }}?action=reduce">减少</a>
-                        <a
-                            href="{{ url_for('remove_from_cart', product_id=item['product']['id']) }}?action=remove">删除</a>
+                        <div class="quantity-controls">
+                            <a href="{{ url_for('remove_from_cart', product_id=item.product.id) }}" class="quantity-btn">-</a>
+                            <span class="quantity">{{ item.quantity }}</span>
+                            <a href="{{ url_for('add_to_cart', product_id=item.product.id) }}" class="quantity-btn">+</a>
+                        </div>
+                    </td>
+                    <td>¥{{ "%.2f"|format(item.product.price * item.quantity) }}</td>
+                    <td>
+                        <a href="{{ url_for('remove_from_cart', product_id=item.product.id, action='remove') }}" class="remove-btn">删除</a>
                     </td>
                 </tr>
                 {% endfor %}
